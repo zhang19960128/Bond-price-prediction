@@ -1,0 +1,611 @@
+\documentclass[a4paper,11pt]{article} % This defines the style of your paper
+\usepackage[top = 2.5cm, bottom = 2.5cm, left = 2.5cm, right = 2.5cm]{geometry} 
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{multirow} % Multirow is for tables with multiple rows within one cell.
+\usepackage{booktabs} % For even nicer tables.
+\usepackage{graphicx} 
+\usepackage{setspace}
+\setlength{\parindent}{0in}
+\usepackage{float}
+\usepackage{aligned-overset}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{subcaption}
+\usepackage{graphicx}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 3. Header (and Footer)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% To make our document nice we want a header and number the pages in the footer.
+
+\pagestyle{fancy} % With this command we can customize the header style.
+
+\fancyhf{} % This makes sure we do not have other information in our header or footer.
+
+\lhead{\footnotesize WELLS  FARGO}% \lhead puts text in the top left corner. \footnotesize sets our font to a smaller size.
+
+%\rhead works just like \lhead (you can also use \chead)
+\rhead{\footnotesize  Jiahao Zhang} %<---- Fill in your lastnames.
+
+% Similar commands work for the footer (\lfoot, \cfoot and \rfoot).
+% We want to put our page number in the center.
+\cfoot{\footnotesize \thepage} 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 4. Your document
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Now, you need to tell LaTeX where your document starts. We do this with the \begin{document} command.
+	% Like brackets every \begin{} command needs a corresponding \end{} command. We come back to this later.
+	
+	\begin{document}
+		
+		\thispagestyle{empty} % This command disables the header on the first page. 
+		
+		\begin{tabular}{p{15.5cm}} % This is a simple tabular environment to align your text nicely 
+			{\large \bf Bond Price Simulation} \\
+			WELLS FARGO \\ Fall 2022  \\ Jiahao Zhang\\
+			\hline % \hline produces horizontal lines.
+			\\
+		\end{tabular} % Our tabular environment ends here.
+		
+		\vspace*{0.3cm} % Now we want to add some vertical space in between the line and our title.
+		
+		\begin{center} % Everything within the center environment is centered.
+			{\Large \bf Bond Price Simulation} % <---- Don't forget to put in the right number
+			\vspace{2mm}
+			
+			% YOUR NAMES GO HERE
+			{\bf Jiahao Zhang} % <---- Fill in your names here!
+			
+		\end{center}  
+		
+		\vspace{0.4cm}
+		
+		%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+		%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+		
+		% Up until this point you only have to make minor changes for every week (Number of the homework). Your write up essentially starts here.
+		
+		\section{Background}
+		Bonds usually serves as an financial contract issued by corporation,  goverments and other financial companies to raise money from society. \cite{John88p14, chen22p2316} While the investors lend money to those issuers, they have an agreement on the fixed interest rate ( usually called coupon rate ) as rewards before the agreed payback date (usually called mature date). \cite{eom2004structural, batten2014convertible}. The basic bond characteristics includes face values, coupon  rate, coupon dates, maturity date and issue price. \cite{Jason22} However, bonds are usually trading at the market. They are not only determined by  those basic characteristics, but also influenced by other properties such as interest rate and defaulting probability (surviving probability). \cite{Jason22, deng2015pricing} For an example, when the market interest rate goes up, bond prices will fail in order to keep up with the interest rate.\cite{malkiel1962expectations, marsh1983stochastic} There are two ways to think about this. First, if the bond price doesn't fall, the bond holders will sell their bonds to chase for higher portfolio return. Thus, the bond price will drop because selling activity is predominant. Second, the issuer will need to make their bonds become attractive compare to interest rate so they will discount their bond value. The goal of this simulation is to explore the bond price change with respect to different factors.
+		
+		\section{Pricing Model Summary}
+		The common approach to evaludate fixed coupon bonds is to discount the cashflows according to a risk free interest rate and probability of survival Q(t):
+		\begin{equation}
+			V = P e^{-rt_{N}} \cdot Q(t_{N}) + \sum_{i=1}^{N}\frac{C}{f} e^{-r t_{i}}\cdot Q(t_{i}) + R\cdot P \sum_{i = 1}^{N} e^{-r t_{i}}[Q(t_{i-1}) - Q(t_{i})]
+		\end{equation}
+	where V is the value of the bond, P is the principle amount, C is the annual coupon amount, f is the number of coupon cashflows per year, and t$_{N}$ denotes the mature date.
+		The first term is the expectation value of buying price when bond matures. Considering a bond with face value P takes $t_{N}$ years to become mature. The money consider interest rate you should consider to pay satisfies $x \cdot (1 + r)^{t_{N}} = P$. So, the cost is $\frac{P}{(1 + r)^{t_{N}}}$. A simple way to calculate this is by substituting $(1 + r)^{-t_{N}}$ with $e^{-rt_{N}}$ when r is very small.\cite{chen22p2316} The factor $Q(t_{N})$ is capturing the risk that bonds got fault and all the money get lost. The second term is capturing all the future bond coupon rewards discounting to the presenting time. The third term $Q(t_{i - 1}) - Q(t_{i})$ denotes the situtation when bonds got defaulted between time $t_{i - 1}$  and $t_{i}$. We multiply the time discount and recycling rate. The three term captures all the cost of the bonds.
+		
+		\section{Modeling Survival Rate}
+		Let's assume at the very short inteval $\Delta t $ the probability of bond got default is $\lambda \Delta t$. So the probability that at time $t = N \Delta t $ bond is still sfe:
+		\begin{align*}
+			P( t > N \Delta t) &= (1 - \lambda \Delta t) ^{N}\\
+			& = (1 - \lambda \Delta t) ^{t/\Delta t}
+		\end{align*}
+	It's obvious that when $ \mathrm{ \Delta t \approx 0 }$, we have $\mathrm{ P( S > t) = exp(-\lambda t) }$. So, it's nature to assume that surviving probability is following exponential distribution with unknown $\mathrm{\lambda}$. We use least square linear regression fitting method with relation $\mathrm{ln(y) = \lambda x}$. The fitted result is showed in  FIG. \ref{FIG1}. The equation is $y = exp(-0.106t)$. The $R^{2}$ of the fitting is 0.997, which indicates the robusty of our theoretical analysis , and validate our assumption.
+\begin{figure}[hbh]
+	\centering
+	\includegraphics[width=0.5\textwidth]{Survive.png}
+	\caption{Survival probability as a function of time fitted model and raw data.}
+	\label{FIG1}
+\end{figure}\\
+\section{Q1 Pricing}
+\subsection{a}
+1- year bond with 3\% coupon paid semi-annually( f = 2 ). For principle part P = 100, the annual paid coupon is $\mathrm{C = 3}$.  The calculation formula is :
+\begin{align*}
+	V &= 100 * exp(-0.03 * 1) * Q(1) + \sum_{i=1}^{2}\frac{3}{2}exp(-0.03 * i / 2) Q(i/2) \\
+	&+ 0.4*100*\sum_{i=1}^{2}exp(-0.03*i/2)[Q((i-1)/2) - Q(i/2)]
+\end{align*}
+The result is 93.8994. (See code attachement)
+\subsection{b}
+5 - year bond with 5\% coupon paid semi-annually f = 4. For principle part P = 100, the annual paid coupon is $\mathrm{C = 5}$. The calculation formula is:
+\begin{align*}
+	V &= 100 * exp(-0.03 * 5) * Q(5) + \sum_{i=1}^{20}\frac{5}{4}exp(-0.03 * i / 4) Q(i/4) \\
+	&+ 0.4*100*\sum_{i=1}^{20}exp(-0.03*i/4)[Q((i-1)/4) - Q(i/4)]
+\end{align*}
+The result is 83.7165 (See code attachment)
+\subsection{c}
+x - year bond with y\% coupon paid frequency. For principle part P = 100, the annual paid coupon is $\mathrm{C = y}$. The calculation formula is:
+\begin{align*}
+	V &= 100 * exp(-0.03 * x) * Q(x) + \sum_{i=1}^{xf}\frac{y}{f}exp(-0.03 * i / f) Q(i/f) \\
+	&+ 0.4*100*\sum_{i=1}^{xf}exp(-0.03*i/f)[Q((i-1)/f) - Q(i/f)]
+\end{align*}
+(See code attachement)
+We plot the bond price with respect to coupon rate and bond mature years when pay frequency is at different numbers in Fig. \ref{BCY}. The bond price increase little and insignificant when pay frequency increase.
+\begin{figure}[hbt]
+	\centering
+	\begin{subfigure}{0.45\textwidth}
+		\includegraphics[width=\textwidth]{BCY1.pdf}
+		\caption{Frequency = 1.}
+		\label{fig:first}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}{0.45\textwidth}
+		\includegraphics[width=\textwidth]{BCY2.pdf}
+		\caption{Frequency = 2}
+		\label{fig:second}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}{0.45\textwidth}
+		\includegraphics[width=\textwidth]{BCY6.pdf}
+		\caption{Frequency = 6}
+		\label{fig:third}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}{0.45\textwidth}
+	\includegraphics[width=\textwidth]{BCY12.pdf}
+	\caption{Frequency = 12}
+	\label{ffig:four}
+\end{subfigure}
+	\caption{Bond Price as a function of coupon rate and mature years at different pay frequency. When Pay frequency increase, the bond price increase little and insignificant. }
+	\label{BCY}
+\end{figure}\\
+\section{Spread Calibration}
+\subsection{a}
+1 - year bond with a 3\% coupon paid semi-annually with market quota = 102
+We first plot interest rate vs bond price for this specific bond.
+\begin{figure}[hbt]
+	\centering
+	\begin{subfigure}{0.45\textwidth}
+		\includegraphics[width=\textwidth]{FIG2A.pdf}
+		\caption{1 - year bond with a 3\% coupon paid semi-annually changes as an function of interest rate.}
+		\label{FIG2A}
+	\end{subfigure}
+	\hfill
+		\begin{subfigure}{0.45\textwidth}
+		\includegraphics[width=\textwidth]{FIG2B.pdf}
+		\caption{5 - year bond with a 5\% coupon paid semi-annually changes as an function of interest rate.}
+		\label{FIG2B}
+	\end{subfigure}
+	\label{FIG2}
+	\caption{Interest rate influence on different bonds}
+\end{figure}
+The problem now is "Given market quote is 102, how do we inverse solve the interest rate". Here, we use the bisection algorithm.\cite{ehiwario2014comparative}  Let's suppose we find the interest rate should lie in the inteval [x1, x2] with $\mathrm{(V(x1) - M ) * (V(x2) - M) < 0}$. Our goal is finding the root x with precision $\epsilon$. The recursion relation is that as long as $\mathrm{(V(x1) - M ) * (V(x2) - M) < 0}$, there must be a position where $\mathrm{V(x) - M = 0}$ simply because the continuity of the function. We recursively check if the middle point and edge point satisfying the relation until we find the inteval length that's within the precision. The algorithm is attached as below in Algorithm \ref{algo}:
+\begin{algorithm}[hbt]
+	\caption{Bisection(x1, x2, Target, $\epsilon$)}
+	\begin{algorithmic} 
+		\REQUIRE $(V(x1) - Target ) * (V(x2) - Target) < 0$
+		\IF{$abs(x1 - x2) < \epsilon$}
+		\STATE $Return ( x1 + x2 ) / 2$
+		\ELSE
+		\STATE middle = (x1 + x2) / 2;
+		\STATE $dv = V(middle) - Target$;
+		\STATE $dv1 = V(x1) - Target$
+		\IF{$dv * dv1 < 0$}
+		\RETURN Bisection(x1, middle, Target ,$\epsilon$)
+		\ELSE
+		\RETURN Bisection(middle, x2, Target ,$\epsilon$)
+		\ENDIF
+		\ENDIF
+	\end{algorithmic}
+	\label{algo}
+\end{algorithm}\\
+The time complexity can be understand from the relation that after each recursion, the inteval length become half of the previous one. To reach the accuracy region, there must be $\mathrm{O(log((x2 - x1 )/ \epsilon))}$ recursions. The result we got for "1 - year bond with 3 \% coupon paid semi-annually with market quote = 102" is -0.054262. So, the calibrate spread s is $-0.084262$. Checking with the plot we did first shown in FIG. \ref{FIG2A}, the results agree well.
+\subsection{b}
+Apply the same logic as the last subsection, "5 - year bond with 5 \% coupon paid quarterly with market quote = 98" is -0.00943. So, the calibrate spread s is $-0.0394$, this result agrees with FIG. \ref{FIG2B}
+\section{Sensitivities}
+There are two ways that we compute the numerical derivatives. First, we can compute this by finite difference method.\cite{zingg1997review,rouabah2012gnss, enwiki:1092596846}. We choose this by five point stencil.
+\begin{equation}
+	f'(x) \approx \frac{-f(x + 2h) + 8f(x+h) -8f(x -h) + f(x - 2h)}{12h}
+\end{equation}
+\begin{figure}
+	\begin{subfigure}{0.42\textwidth}
+	\includegraphics[width=\textwidth]{coupon5.png}
+	\caption{Coupon = 0.05.}
+	\label{section3bc5}
+\end{subfigure}
+\hfill
+\begin{subfigure}{0.45\textwidth}
+	\includegraphics[width=\textwidth]{coupon10.png}
+	\caption{Coupon = 0.10}
+	\label{section3bc10}
+\end{subfigure}
+	\caption{ long term bonds are more sensitive to interest rate change. but under small coupon rate, there will be a maximum sensitivity versus marture time}
+	\label{FIG4}
+\end{figure}\\
+It's easy to prove this truncation error is $O(h^4)$. One may think to obtain high accuracy derivatives, we can simply reduce  h. However, this is not the case. Becuase, numerically, we will need to substract two very close number and divide a very small number. The most popular way of doing  is by auto-differentiation machine, which is not only numerical stable but also cheap. It has been widely implemented in Machine learning algorithms.\cite{maclaurin2016modeling, bolte2020mathematical,baydin2014automatic} The basic idea is that track the operators in the mathematic functions when program is calling the operator. This is the exact numerical derivatives without analytical derivation. We will use both in this section.
+\subsection{1a}
+1- year bond with 3\% coupon paid semi-annually( f = 2 ). For principle part P = 100, the annual paid coupon is $\mathrm{C = 3}$. The sensitivity is listed as following
+\begin{center}
+	\begin{tabular}{ |c|c|c| } 
+		\hline
+		   & numerical& autodiff \\ 
+		\hline
+		bond sensitivity & -92.17677861850385  & -92.17677861840514 \\ 
+		\hline
+	\end{tabular}
+\end{center}
+\subsection{1b}
+5 - year bond with 5\% coupon paid semi-annually f = 4. For principle part P = 100, the annual paid coupon is $\mathrm{C = 5}$. The sensitivity is listed as following
+\begin{center}
+	\begin{tabular}{ |c|c|c| } 
+		\hline
+		& numerical& autodiff \\ 
+		\hline
+		bond sensitivity & -330.398722946145  & -330.39872294609074 \\ 
+		\hline
+	\end{tabular}
+\end{center}
+\subsection{1c}
+We plot the bond sensitivity with respect to coupon rate and bond mature years when pay frequency is at different numbers in Fig. \ref{BSCY}. From the figure \ref{BSCY}, generally, the long term bond is more sensitive to interest rate. But, we can see that when coupon rate is low. We can see that long term bond has an maximum sensitivity at finite mature year. When coupon rate is high, we didn’t see any instability (or maximum sensitivity)
+\begin{figure}[hbt]
+	\centering
+	\begin{subfigure}{0.45\textwidth}
+		\includegraphics[width=\textwidth]{BSCY1.pdf}
+		\caption{Frequency = 1.}
+		\label{fig:first}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}{0.45\textwidth}
+		\includegraphics[width=\textwidth]{BSCY2.pdf}
+		\caption{Frequency = 2}
+		\label{fig:second}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}{0.45\textwidth}
+		\includegraphics[width=\textwidth]{BSCY6.pdf}
+		\caption{Frequency = 6}
+		\label{fig:third}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}{0.45\textwidth}
+		\includegraphics[width=\textwidth]{BSCY12.pdf}
+		\caption{Frequency = 12}
+		\label{ffig:four}
+	\end{subfigure}
+	\caption{Bond Price Sensitivity as a function of coupon rate and mature years at different pay frequency. From the figure, we can see that when coupon rate is low. We see that long term bond has a maximum sensitivity at finite mature year.  When coupon rate is high, we didn't see any instability (or maximum sensitivity)}
+	\label{BSCY}
+\end{figure}\\
+\subsection{b}
+We use the same logic and plot the bond- sensitivity with regarding to mature time. From the figure \ref{FIG4}, we found that long term bonds are more sensitive to interest rate change.  But for lower coupon rate, it could have unstable behavior (maximum sensitivity at finite mature time). For higher coupon rate, it simply increase as a function of mature time\cite{villazon1991bond}\\
+\newpage 
+\section{Appendix}
+\subsection{Basic Class of Bond}
+\begin{lstlisting}
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Nov 11 16:05:09 2022
+
+@author: jiahaozhang
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib
+from sklearn.linear_model import LinearRegression
+font={'size':30, 'family':'Times New Roman'};
+plt.rcParams['figure.figsize']=(10, 8);
+matplotlib.rc('font', **font);
+class Bond:
+    def __init__(self, year, fn, principle, InterestR, Recovery):
+        self.year = year; # How many years are there for the payment exist;
+        self.fn = fn; # How many times each year pays the Coupon.
+        self.principle = principle; # Principle part of the Bond
+        self.InterestR = InterestR; # interest Rate in the capital market.
+        self.Recovery = Recovery; # Recovery Rate when bond got defaulted.
+        self.Paytimes = int( self.year * self.fn ); # How many times it should pay the coupon.
+        self.paygrid = np.arange(1, self.Paytimes + 1, 1) / self.fn; # the time grid of payment.
+
+    def update_InterestR(self, r):
+        self.InterestR = r;
+
+    def paycoupon(self, AnnualC):
+        self.AnnualC = AnnualC;
+
+    def calculateV(self, IR = None):
+        if IR is None:
+            IR = self.InterestR;
+        Qgrid = self.predictQ(self.paygrid);
+        term1 = self.principle * np.exp( -1 * IR * self.year) * Qgrid[-1];
+        term2 = self.AnnualC / self.fn * np.exp( -1 * IR * self.paygrid ) * Qgrid;
+        term2 = np.sum(term2);
+        Qi_1 = np.array( [1] + list(Qgrid[0 : (self.Paytimes - 1)] ) );
+        term3 = np.exp(-1 * IR * self.paygrid) * (Qi_1 - Qgrid);
+        term3 = np.sum(term3) * self.Recovery * self.principle;
+        return term1 + term2 + term3;
+
+    def loadQ(self, filename):
+        self.Q = np.loadtxt(filename);
+        xgrid = self.Q[:, 0];
+        ygrid = self.Q[:, 1];
+        lnxgrid = xgrid;
+        lnygrid = np.log(ygrid);
+        length = len(ygrid);
+        regx = np.reshape( lnxgrid, (length, 1) );
+        regy = np.reshape( lnygrid, (length, 1) );
+        self.regQ = LinearRegression(fit_intercept = False).fit(regx, regy);
+        self.r_squared = self.regQ.score(regx, regy)
+
+    def predictQ(self, year):
+        yearinput = np.array(year).flatten();
+        yearinput = np.array(year).reshape((len(yearinput), 1));
+        ygrid = self.regQ.predict( yearinput );
+        return np.exp( ygrid.flatten() );
+
+    def plotQ(self):
+        plt.scatter(self.Q[:, 0], self.Q[:, 1], marker='o', s = 100, label = "Raw data");
+        xgrid_p = np.linspace(0, np.max(self.Q[:, 0]), 100);
+        ygrid_p = self.predictQ(xgrid_p);
+        plt.plot(xgrid_p, ygrid_p, '-r', label = 'Fit')
+        plt.legend()
+        plt.xlabel("Time (year)")
+        plt.ylabel("Prob")
+if __name__=='__main__':
+    bond1 = Bond(1, 2, 100, 0.03, 0.4);
+    bond1.loadQ("./Qdat.dat")
+    #bond1.plotQ();
+    bond1.paycoupon( bond1.principle * 0.03 );
+    re1 = bond1.calculateV();
+    print(re1)
+    bond5 = Bond(5, 4, 100, 0.03, 0.4);
+    bond5.loadQ("./Qdat.dat")
+    bond5.paycoupon( bond5.principle * 0.05 );
+    re2 = bond5.calculateV();
+    print(re2)
+    bond5 = Bond(5, 12, 100, 0.03, 0.4);
+    bond5.loadQ("./Qdat.dat")
+    bond5.paycoupon( bond5.principle * 0.05 );
+    re2 = bond5.calculateV();
+    print(re2)
+    \end{lstlisting}
+\subsection{Calibration s}
+\begin{lstlisting}
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Nov 11 21:57:10 2022
+
+@author: jiahaozhang
+"""
+from bond import Bond
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib
+from sklearn.linear_model import LinearRegression
+font={'size':30, 'family':'Times New Roman'};
+plt.rcParams['figure.figsize']=(10, 8);
+matplotlib.rc('font', **font);
+plt.subplots_adjust(left=0.18, right=0.95, top=0.95, bottom=0.18);
+class calibration(Bond):
+    def plotr(self):
+        xgrid = np.linspace(-0.1, 0.1, 100);
+        ygrid = np.zeros(len(xgrid));
+        for i in range(len(xgrid)):
+            self.update_InterestR(xgrid[i]);
+            ygrid[i] = self.calculateV();
+        plt.plot(xgrid, ygrid)
+        plt.xlabel("Interest Rate")
+        plt.ylabel("Market Price")
+
+    def bisect(self, xleft, xright, target, precision):
+        self.update_InterestR(xleft);
+        dvl = self.calculateV() - target;
+        self.update_InterestR(xright);
+        dvr = self.calculateV() - target;
+        if dvl * dvr > 0:
+            print("Bad Initial Guess");
+            return np.inf;
+        def bi(x1, x2):
+            nonlocal target;
+            middle = (x1 + x2) / 2;
+            if np.abs(x1 - x2) < precision:
+                return (x1 + x2) / 2;
+            self.update_InterestR(middle);
+            dvm = self.calculateV() - target;
+            self.update_InterestR(x1);
+            dvl = self.calculateV() - target;
+            if dvm * dvl < 0:
+                return bi(x1, middle);
+            else:
+                return bi(middle, x2);
+        return bi(xleft, xright);
+if __name__ == "__main__":
+#    cal = calibration(1, 2, 100, 0.03, 0.4);
+#    cal.loadQ("./Qdat.dat");
+#    cal.paycoupon(3)
+#    cal.plotr();
+#    print(cal.bisect(-1, 1, 102, 1e-6))
+#    plt.show()
+    cal = calibration(5, 4, 100, 0.03, 0.4);
+    cal.loadQ("./Qdat.dat");
+    cal.paycoupon(5)
+    cal.plotr();
+    print(cal.bisect(-1, 1, 98, 1e-6))
+    plt.show()
+\end{lstlisting}
+\subsection{2D plot}
+\begin{lstlisting}
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Nov 12 10:03:56 2022
+
+@author: jiahaozhang
+"""
+from bond import Bond
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib
+from matplotlib import cm
+from sklearn.linear_model import LinearRegression
+font={'size':20, 'family':'Times New Roman'};
+plt.rcParams['figure.figsize']=(10, 8);
+matplotlib.rc('font', **font);
+fn = 1;
+xgrid = np.arange(1, 50);
+ygrid = np.arange(0, 0.3, 0.01);
+X, Y = np.meshgrid(xgrid, ygrid);
+shape = np.shape(X);
+Vprice = np.zeros(shape);
+for x in range(shape[0]):
+    for y in range(shape[1]):
+        year = X[x, y];
+        coupon = Y[x, y];
+        bd = Bond(year, fn, 100, 0.03, 0.4);
+        bd.paycoupon( bd.principle * coupon );
+        bd.loadQ("./Qdat.dat");
+        Vprice[x, y] = bd.calculateV();
+fig, ax = plt.subplots(constrained_layout=True);
+cf = ax.contourf(X, Y, Vprice, cmap = cm.jet, levels = 15)
+cs = ax.contour(X, Y, Vprice, levels = 15)
+ax.clabel(cs, inline = 1, fontsize = 15, fmt = "%5.1f")
+ax.set_xlabel("Years")
+ax.set_ylabel("Coupon rate")
+fig.colorbar(cf, ax=ax, shrink=0.7)
+ax.set_title("Bond price when pay frequency = {0:d}".format(fn))
+ax.locator_params(nbins=4)
+\end{lstlisting}
+\subsection{Bond Sensitivity}
+\begin{lstlisting}
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Nov 12 11:22:50 2022
+
+@author: jiahaozhang
+"""
+import matplotlib.pyplot as plt
+import matplotlib
+from bond import Bond
+from sklearn.linear_model import LinearRegression
+import autograd.numpy as np
+from autograd import grad
+from autograd import elementwise_grad as egrad
+font={'size':30, 'family':'Times New Roman'};
+plt.rcParams['figure.figsize']=(10, 8);
+matplotlib.rc('font', **font);
+class bondsensive(Bond):
+    def fivestencil(self, x, h= 0.0001):
+        fx_2h = self.calculateV(x - 2*h);
+        fx_h = self.calculateV(x - h);
+        fxph = self.calculateV(x + h);
+        fxp2h = self.calculateV(x + 2*h);
+        return (-1*fxp2h + 8 * fxph - 8 * fx_h + fx_2h) / 12 / h;
+
+    def calculateV(self, IR):
+        Qgrid = self.predictQ(self.paygrid);
+        term1 = self.principle * np.exp( -1 * IR * self.year) * Qgrid[-1];
+        term2 = self.AnnualC / self.fn * np.exp( -1 * IR * self.paygrid ) * Qgrid;
+        term2 = np.sum(term2);
+        Qi_1 = np.array( [1] + list(Qgrid[0 : (self.Paytimes - 1)] ) );
+        term3 = np.exp(-1 * IR * self.paygrid) * (Qi_1 - Qgrid);
+        term3 = np.sum(term3) * self.Recovery * self.principle;
+        return term1 + term2 + term3;
+
+    def automaticgrad(self, x):
+        gradV = egrad(self.calculateV);
+        return gradV(x);
+
+if __name__ == "__main__":
+    bond1 = bondsensive(1, 2, 100, 0.03, 0.4);
+    bond1.loadQ("./Qdat.dat");
+    bond1.paycoupon(bond1.principle * 0.03)
+    print(bond1.fivestencil(0.03))
+    print(bond1.automaticgrad(0.03))
+    bond5 = bondsensive(5, 4, 100, 0.03, 0.4);
+    bond5.loadQ("./Qdat.dat")
+    bond5.paycoupon( bond5.principle * 0.05 );
+    print(bond5.fivestencil(0.03));
+    print(bond5.automaticgrad(0.03));
+\end{lstlisting}
+\subsection{2D sensitivity}
+\begin{lstlisting}
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Nov 12 12:39:26 2022
+
+@author: jiahaozhang
+"""
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Nov 12 10:03:56 2022
+
+@author: jiahaozhang
+"""
+from bondsensitive import bondsensive
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib
+from matplotlib import cm
+from sklearn.linear_model import LinearRegression
+font={'size':20, 'family':'Times New Roman'};
+plt.rcParams['figure.figsize']=(10, 8);
+matplotlib.rc('font', **font);
+fn = 12;
+xgrid = np.arange(1, 20);
+ygrid = np.arange(0, 0.2, 0.01);
+X, Y = np.meshgrid(xgrid, ygrid);
+shape = np.shape(X);
+Vprice = np.zeros(shape);
+for x in range(shape[0]):
+    for y in range(shape[1]):
+        year = X[x, y];
+        coupon = Y[x, y];
+        bd = bondsensive(year, fn, 100, 0.03, 0.4);
+        bd.paycoupon( bd.principle * coupon );
+        bd.loadQ("./Qdat.dat");
+        Vprice[x, y] = bd.automaticgrad( 0.03 );
+fig, ax = plt.subplots(constrained_layout=True);
+cf = ax.contourf(X, Y, Vprice, cmap = cm.jet, levels = 15)
+cs = ax.contour(X, Y, Vprice, levels = 15)
+ax.clabel(cs, inline = 1, fontsize = 15, fmt = "%5.1f")
+ax.set_xlabel("Years")
+ax.set_ylabel("Coupon rate")
+fig.colorbar(cf, ax=ax, shrink=0.7)
+ax.set_title("Bond sensitivity when pay frequency = {0:d}".format(fn))
+ax.locator_params(nbins=4)
+plt.show();
+\end{lstlisting}
+\subsection{bond sensitivity 1D Q(3.2)}
+\begin{lstlisting}
+"""
+Created on Sat Nov 12 12:39:26 2022
+
+@author: jiahaozhang
+"""
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Nov 12 10:03:56 2022
+
+@author: jiahaozhang
+"""
+from bondsensitive import bondsensive
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib
+from matplotlib import cm
+from sklearn.linear_model import LinearRegression
+font={'size':20, 'family':'Times New Roman'};
+plt.rcParams['figure.figsize']=(10, 8);
+matplotlib.rc('font', **font);
+fn = 4;
+coupon = 0.05;
+xgrid = np.arange(1, 50);
+sensprice = np.zeros(len(xgrid));
+for i in range(len(xgrid)):
+    bd = bondsensive(xgrid[i], fn, 100, 0.03, 0.4);
+    bd.paycoupon( bd.principle * coupon );
+    bd.loadQ("./Qdat.dat");
+    sensprice[i] = bd.automaticgrad( 0.03 );
+plt.plot(xgrid, sensprice,'-d')
+plt.xlabel("Mature Year")
+plt.ylabel("Sensitivity")
+plt.show();
+\end{lstlisting}
+\bibliographystyle{unsrt}
+\bibliography{citation.bib}
+\end{document}
